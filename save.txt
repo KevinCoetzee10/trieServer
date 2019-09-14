@@ -1,2 +1,7 @@
 cat
+cats
+dogs
 dog
+hat
+streets
+street

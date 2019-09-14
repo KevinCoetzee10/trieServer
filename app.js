@@ -2,8 +2,8 @@
  * Filename: app.js
  * Author: Kevin Coetzee
  * 
- *  The app.js file is used for routing to different 
- * `platforms' cleaner APIs
+ *  The app.js file is used for routing in a situation where the Trie data structure
+ *  needs to be used without accessing the website interface.
  */
 
 const express = require('express');
@@ -28,8 +28,14 @@ app.use((req, res, next) => {
     next();
   });
 
+/**
+ * routes to navigation.js for the website interface
+ */
 app.use('/', navigationRoute);
 
+/**
+ * routes to dataStructures/trie.js for just using the Trie class
+ */
 app.use('/trie', trieRoute);
 
 app.use((req, res, next) => {

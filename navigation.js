@@ -1,3 +1,10 @@
+/**
+ * Filename: navigation.js
+ * Author: Kevin Coetzee
+ * 
+ *  The navigation.js file is used for routing within the Trie website interface
+ */
+
 const express = require('express');
 const router = express.Router();
 const Trie = require('./dataStructures/trie');
@@ -56,7 +63,7 @@ let menuBottom = `
      * request, response and relevant callback function.
      */
     router.get('/trieMenu', (request, response, next) =>{
-        loadTrie(request, response, returnMenu);
+        loadTrie(response, returnMenu);
     });
 
     /**
@@ -66,7 +73,7 @@ let menuBottom = `
      */
     router.get('/trieAdd', (request, response, next) =>{
         if(request.query.addValue==""){
-            returnEmptyFields(request.query.addValue, response, globalTrie);
+            returnEmptyFields(response);
         }else{
             returnAddResult(request.query.addValue, response, globalTrie);
         }
@@ -79,7 +86,7 @@ let menuBottom = `
      */
     router.get('/trieSearch', (request, response, next) =>{
         if(request.query.searchValue==""){
-            returnEmptyFields(request.query.addValue, response, globalTrie);
+            returnEmptyFields(response);
         }else{
             returnSearchResult(request.query.searchValue, response, globalTrie);
         }
@@ -95,19 +102,19 @@ let menuBottom = `
             if(error){
                 console.log(error);
             }
-            loadTrie(request, response, returnEmptyTrie);
+            loadTrie(response, returnEmptyTrie);
         });
     });
 
 
     /**
      * loadTrie - creates a new Trie data structure, and restores the state saved in the
-     * save.txt textfile, to this new Trie.
-     * @param {*} requestValue 
-     * @param {*} response 
-     * @param {*} callback 
+     * save.txt textfile, to this new Trie. The trie is then saved as a global variable.
+     * The relevant callback function is then called with the relevant response.
+     * @param {object} response - the response which is sent through to the callback function for eventual responding
+     * @param {function} callback - specific function to call after this function's execution based on initial route
      */
-    function loadTrie(requestValue, response, callback){
+    function loadTrie(response, callback){
         trie = new Trie();
         fs.readFile('save.txt', 'utf-8', (error, data)=>{
             let index = 0;
@@ -122,21 +129,29 @@ let menuBottom = `
                 index++;
             }
             if(tempWord!=""){
-                trie.addWordIteratively(tempWord);
+                trie.addWordIteratively(tempWord, false);
             }
-            callback(requestValue, response, trie);
+            globalTrie = trie;
+            callback(response);
         });
     }
 
     /**
-     * trieMenu route for server, returns a menu listing all functions that can be 
-     * performed on a Trie data structure (adding words, searching words, clearing Trie)
+     * returnMenu - responds to the initial request with just the basic trie menu.
+     * @param {object} response - specific response to be used for serving HTML
      */
-    function returnMenu(requestValue, response, trie){
-        globalTrie = trie;
+    function returnMenu(response){
         response.send(menuTop+menuBottom);
     };
 
+    /**
+     * returnSearchResult - calls the Trie's search function to determine whether an entered
+     * word exists within trie, and returns an HTML message indicating whether it could be 
+     * found or not.
+     * @param {string} requestValue - the word to be searched for
+     * @param {object} response - specific response to be used for serving HTML
+     * @param {Trie} trie - trie which must be searched
+     */
     function returnSearchResult(requestValue, response, trie){
         let responseString = menuTop;
         if(trie.searchWordIteratively(requestValue)){
@@ -148,9 +163,18 @@ let menuBottom = `
         response.send(responseString);
     }
 
+    /**
+     * returnAddResult - calls the Trie's add function to determine whether an entered
+     * word  already exists within the trie, and adds the word if it was not already added.
+     * The save flag in the add function is used to save the new word to the save.txt textfile.
+     * The function then returns an HTML message indicating whether it could be added or not.
+     * @param {string} requestValue - the word to be added to the trie
+     * @param {object} response - specific response to be used for serving HTML
+     * @param {Trie} trie - trie which must be added to
+     */
     function returnAddResult(requestValue, response, trie){
         let responseString = menuTop;
-        if(trie.addWordAndSave(requestValue)){
+        if(trie.addWordIteratively(requestValue,true)){
             responseString += "<p>The word has been added successfully!</p>"
         }else{
             responseString += "<p>The word could not be added, as it already exists in the trie.</p>"
@@ -159,12 +183,21 @@ let menuBottom = `
         response.send(responseString);
     }
 
-    function returnEmptyTrie(requestValue, response, trie){
-        globalTrie = trie;
+    /**
+     * returnEmptyTrie - responds to the initial request with just the basic trie menu and a 
+     * message indicating that the trie has been cleared.
+     * @param {object} response - specific response to be used for serving HTML
+     */
+    function returnEmptyTrie(response){
         response.send(menuTop + '<p>The trie has been cleared.</p>' + menuBottom);
     }
 
-    function returnEmptyFields(requestValue, response, trie){
+    /**
+     * returnEmptyFields - responds to the initial request with just the basic trie menu and a 
+     * message indicating that all fields were empty.
+     * @param {object} response - specific response to be used for serving HTML
+     */
+    function returnEmptyFields(response){
         response.send(menuTop + '<p>Please enter a value into the relevant field.</p>' + menuBottom);
     }
 
